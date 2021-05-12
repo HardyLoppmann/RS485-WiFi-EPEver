@@ -39,6 +39,7 @@ const char* OTA_INDEX PROGMEM
 #include "config.h"
 #include "mqtt.h"
 #include "influxdb.h"
+#include "influxcloud.h"
 
 AsyncWebServer server(80);
 DNSServer dns;
@@ -67,6 +68,7 @@ uint16_t LoadSwitchstate;
 uint16_t Status;
 uint16_t TPPassthrough;
 uint16_t DeviceTemp;
+
 uint16_t MQTTEN;
 uint16_t MQTTIP;
 uint16_t MQTTPORT;
@@ -80,6 +82,12 @@ uint16_t INFLUXDBDB;
 uint16_t INFLUXDBUSER;
 uint16_t INFLUXDBPASS;
 uint16_t INFLUXDBEN;
+
+uint16_t INFLUXCLOUDURL;
+uint16_t INFLUXCLOUDTOKEN;
+uint16_t INFLUXCLOUDORG;
+uint16_t INFLUXCLOUDBUCKET;
+uint16_t INFLUXCLOUDEN;
 
 uint16_t OverVoltDist;
 uint16_t OverVoltRecon;
@@ -390,6 +398,38 @@ void InfluxDBPasstxt(Control *sender, int type) {
   strcpy(myConfig.influxdb_password,(sender->value).c_str());
 }
 
+void InfluxCloudUrltxt(Control *sender, int type) {
+  Serial.print("Text: ID: ");
+  Serial.print(sender->id);
+  Serial.print(", Value: ");
+  Serial.println(sender->value);
+  strcpy(myConfig.influxcloud_url,(sender->value).c_str());
+}
+
+void InfluxCloudTokentxt(Control *sender, int type) {
+  Serial.print("Text: ID: ");
+  Serial.print(sender->id);
+  Serial.print(", Value: ");
+  Serial.println(sender->value);
+  strcpy(myConfig.influxcloud_token,(sender->value).c_str());
+}
+
+void InfluxCloudOrgtxt(Control *sender, int type) {
+  Serial.print("Text: ID: ");
+  Serial.print(sender->id);
+  Serial.print(", Value: ");
+  Serial.println(sender->value);
+  strcpy(myConfig.influxcloud_org,(sender->value).c_str());
+}
+
+void InfluxCloudBuckettxt(Control *sender, int type) {
+  Serial.print("Text: ID: ");
+  Serial.print(sender->id);
+  Serial.print(", Value: ");
+  Serial.println(sender->value);
+  strcpy(myConfig.influxcloud_bucket,(sender->value).c_str());
+}
+
 void BatteryTypeList(Control *sender, int type) {
   Serial.print("Text: ID: ");
   Serial.print(sender->id);
@@ -450,6 +490,23 @@ void InfluxDBEnSwitch(Control *sender, int value) {
   case S_INACTIVE:
     Serial.print("Inactive");
     myConfig.influxdb_enabled = 0;
+    break;
+  }
+
+  Serial.print(" ");
+  Serial.println(sender->id);
+}
+
+void InfluxCloudEnSwitch(Control *sender, int value) {
+  switch (value) {
+  case S_ACTIVE:
+    Serial.print("Active:");
+    myConfig.influxcloud_enabled = 1;
+    break;
+
+  case S_INACTIVE:
+    Serial.print("Inactive");
+    myConfig.influxcloud_enabled = 0;
     break;
   }
 
@@ -546,6 +603,12 @@ void setup(void) {
   MQTTPASS = ESPUI.addControl( ControlType::Text, "MQTT Password:", "password", ControlColor::Emerald, tab3 ,&MQTTPasstxt);
   MQTTTOPIC = ESPUI.addControl( ControlType::Text, "MQTT Topic:", "solar", ControlColor::Emerald, tab3 ,&MQTTTopictxt);
   MQTTEN = ESPUI.addControl(ControlType::Switcher, "Enable MQTT", "", ControlColor::Alizarin,tab3, &MQTTEnSwitch);
+
+  INFLUXCLOUDURL = ESPUI.addControl( ControlType::Text, "InfluxCloud Url:", "url", ControlColor::Emerald, tab3 ,&InfluxCloudUrltxt);
+  INFLUXCLOUDTOKEN = ESPUI.addControl( ControlType::Text, "InfluxCloud Token:", "token", ControlColor::Emerald, tab3 ,&InfluxCloudTokentxt);
+  INFLUXCLOUDORG = ESPUI.addControl( ControlType::Text, "InfluxCloud Org:", "org", ControlColor::Emerald, tab3 ,&InfluxCloudOrgtxt);
+  INFLUXCLOUDBUCKET = ESPUI.addControl( ControlType::Text, "InfluxCloud Bucket:", "bucket", ControlColor::Emerald, tab3 ,&InfluxCloudBuckettxt);
+  INFLUXCLOUDEN = ESPUI.addControl(ControlType::Switcher, "Enable InfluxCloud", "", ControlColor::Alizarin,tab3, &InfluxCloudEnSwitch);  
     
   LoadSwitchstate = ESPUI.addControl(ControlType::Switcher, "Load", "", ControlColor::Alizarin,tab3, &LoadSwitch);
     
@@ -844,6 +907,12 @@ void loop(void) {
   ESPUI.updateControlValue(INFLUXDBPASS , String(myConfig.influxdb_password));
   ESPUI.updateControlValue(INFLUXDBDB , String(myConfig.influxdb_database));
   ESPUI.updateControlValue(INFLUXDBEN , String(myConfig.influxdb_enabled));
+
+  ESPUI.updateControlValue(INFLUXCLOUDURL , String(myConfig.influxcloud_url));
+  ESPUI.updateControlValue(INFLUXCLOUDTOKEN , String(myConfig.influxcloud_token));
+  ESPUI.updateControlValue(INFLUXCLOUDORG , String(myConfig.influxcloud_org));
+  ESPUI.updateControlValue(INFLUXCLOUDBUCKET , String(myConfig.influxcloud_bucket));
+  ESPUI.updateControlValue(INFLUXCLOUDEN , String(myConfig.influxcloud_enabled));
   
   // Read Values from Charge Controller
   ReadValues();
@@ -900,7 +969,12 @@ void loop(void) {
 
   // establish/keep influxdb connection
   if(myConfig.influxdb_enabled == 1) {
-    Influxdb_postData(); 
+    Influxdb_postData();
+  }
+  
+  // establish/keep influxcloud connection
+  if(myConfig.influxcloud_enabled == 1) {
+    influxCloudPostData();
   }
 
 // Do the Switching of the Load here

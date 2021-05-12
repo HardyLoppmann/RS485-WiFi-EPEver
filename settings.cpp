@@ -70,6 +70,11 @@ void FactoryResetSettings() {
   const char influxdb_user[] = "username";
   const char influxdb_password[] = "password";
 
+  const char influxcloud_url[] = "https://cloud.example.com";
+  const char influxcloud_token[] = "token";
+  const char influxcloud_org[] = "org";
+  const char influxcloud_bucket[] = "bucket";
+
   strcpy(myConfig.influxdb_host, influxdb_host );
   strcpy(myConfig.influxdb_database, influxdb_database );
   strcpy(myConfig.influxdb_user, influxdb_user );
@@ -85,6 +90,13 @@ void FactoryResetSettings() {
   
   myConfig.MQTT_Enable=false;
   myConfig.mqtt_port = 1883;
-
+  
+  strcpy(myConfig.influxcloud_url, influxcloud_url );
+  strcpy(myConfig.influxcloud_token, influxcloud_token );
+  strcpy(myConfig.influxcloud_org, influxcloud_org );
+  strcpy(myConfig.influxcloud_bucket, influxcloud_bucket );
+  
+  myConfig.influxcloud_enabled=false;
+    
   WriteConfigToEEPROM();
 }

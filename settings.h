@@ -26,6 +26,12 @@ struct eeprom_settings {
   char influxdb_database[32 + 1];
   char influxdb_user[32 + 1];
   char influxdb_password[32 + 1];
+
+  bool influxcloud_enabled;
+  char influxcloud_url[64 +1 ];
+  char influxcloud_token[88 + 1];
+  char influxcloud_org[32 + 1];
+  char influxcloud_bucket[32 + 1];
 };
 
 extern eeprom_settings myConfig;
