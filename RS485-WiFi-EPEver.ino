@@ -15,8 +15,6 @@
  *    I also couldn't have made this without the ESPUI project.
 */
  
-
-
 #include <DNSServer.h>
 #include <ESPUI.h>
 #include <ModbusMaster.h>
@@ -26,15 +24,12 @@
 #include "settings.h"
 #include <WiFiClient.h>
 #include <ESP8266HTTPClient.h>
-
 #include <ESPAsyncWebServer.h>     //Local WebServer used to serve the configuration portal
 #include <ESPAsyncWiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
-
 #include <Updater.h>
 
 const char* OTA_INDEX PROGMEM
     = R"=====(<!DOCTYPE html><html><head><meta charset=utf-8><title>OTA</title></head><body><div class="upload"><form method="POST" action="/ota" enctype="multipart/form-data"><input type="file" name="data" /><input type="submit" name="upload" value="Upload" title="Upload Files"></form></div></body></html>)=====";
-
 
 #include "config.h"
 #include "mqtt.h"
@@ -130,8 +125,7 @@ uint16_t EQChargeVoltValue;
 int period = 60000;
 unsigned long time_now = 0;
 
-void handleOTAUpload(AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final)
-{
+void handleOTAUpload(AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final) {
     if (!index)
     {
         Serial.printf("UploadStart: %s\n", filename.c_str());
@@ -172,8 +166,7 @@ void handleOTAUpload(AsyncWebServerRequest* request, String filename, size_t ind
     }
 }
 
-void setupGUI()
-{
+void setupGUI() {
     ESPUI.begin("RS485-WiFi"); // It is important that ESPUI.begin(...) is called first so that ESPUI.server is initalized
 
     ESPUI.server->on("/ota", 
@@ -451,12 +444,10 @@ void RatedVoltagelvlList(Control *sender, int type) {
   Serial.println(sender->value);
 }
 
-
 // Pins
 //
 #define MAX485_DE         D2  // data or
 #define MAX485_RE         D1  // recv enable
-
 
 ModbusMaster node;   // instantiate ModbusMaster object
 
@@ -529,6 +520,13 @@ void MQTTEnSwitch(Control *sender, int value) {
 
   Serial.print(" ");
   Serial.println(sender->id);
+}
+
+void configModeCallback (AsyncWiFiManager *myWiFiManager) {
+  Serial.println("Entered config mode");
+  Serial.println(WiFi.softAPIP());
+  //if you used auto generated SSID, print it
+  Serial.println(myWiFiManager->getConfigPortalSSID());
 }
 
 void setup(void) {
@@ -616,6 +614,8 @@ void setup(void) {
   
   //first parameter is name of access point, second is the password
   AsyncWiFiManager wifiManager(&server,&dns);
+  //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
+  wifiManager.setAPCallback(configModeCallback);
   wifiManager.autoConnect("RS485-WiFi");
   wifiManager.setConfigPortalTimeout(180);
   ESPUI.jsonInitialDocumentSize = 16000; // This is the default, adjust when you have too many widgets or options
@@ -627,12 +627,10 @@ void setup(void) {
 
 uint16_t ReadTegister(uint16_t Register) {
   // Read register at the address passed in
-  //
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(Register, 1);
   if (result == node.ku8MBSuccess)  {
-    
     EQChargeVoltValue = node.getResponseBuffer(0);
     Serial.println(String(node.getResponseBuffer(0)));
   } else  {
@@ -646,66 +644,52 @@ uint16_t ReadTegister(uint16_t Register) {
 
 void ReadValues() {  
   // clear old data
-  //
   memset(rtc.buf,0,sizeof(rtc.buf));
   memset(live.buf,0,sizeof(live.buf));
   memset(stats.buf,0,sizeof(stats.buf));
 
   // Read registers for clock
-  //
   delay(200);
   node.clearResponseBuffer();
   result = node.readHoldingRegisters(RTC_CLOCK, RTC_CLOCK_CNT);
-  if (result == node.ku8MBSuccess)  {
-
+  if (result == node.ku8MBSuccess) {
     rtc.buf[0]  = node.getResponseBuffer(0);
     rtc.buf[1]  = node.getResponseBuffer(1);
     rtc.buf[2]  = node.getResponseBuffer(2);
-    
   } else {
     Serial.print("Miss read rtc-data, ret val:");
     Serial.println(result, HEX);
   } 
 
   // read LIVE-Data
-  // 
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(LIVE_DATA, LIVE_DATA_CNT);
 
-  if (result == node.ku8MBSuccess)  {
-
+  if (result == node.ku8MBSuccess) {
     for(i=0; i< LIVE_DATA_CNT ;i++) live.buf[i] = node.getResponseBuffer(i);
-       
   } else {
     Serial.print("Miss read liva-data, ret val:");
     Serial.println(result, HEX);
   } 
 
- 
-
   // Statistical Data
-  //
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(STATISTICS, STATISTICS_CNT);
 
-  if (result == node.ku8MBSuccess)  {
-    
+  if (result == node.ku8MBSuccess) {
     for(i=0; i< STATISTICS_CNT ;i++)  stats.buf[i] = node.getResponseBuffer(i);
-    
   } else  {
     Serial.print("Miss read statistics, ret val:");
     Serial.println(result, HEX);
   } 
 
   // BATTERY_TYPE
-  //
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(BATTERY_TYPE, 1);
   if (result == node.ku8MBSuccess)  {
-    
     BatteryType = node.getResponseBuffer(0);
     Serial.println(String(node.getResponseBuffer(0)));
   } else  {
@@ -718,7 +702,7 @@ void ReadValues() {
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(EQ_CHARGE_VOLT, 1);
-  if (result == node.ku8MBSuccess)  {
+  if (result == node.ku8MBSuccess) {
     
     EQChargeVoltValue = node.getResponseBuffer(0);
     Serial.println(String(node.getResponseBuffer(0)));
@@ -728,28 +712,22 @@ void ReadValues() {
   }
 
   // CHARGING_LIMIT_VOLT
-  //
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(CHARGING_LIMIT_VOLT, 1);
-  if (result == node.ku8MBSuccess)  {
-    
+  if (result == node.ku8MBSuccess) {
     ChargeLimitVolt = node.getResponseBuffer(0);
     Serial.println(String(node.getResponseBuffer(0)));
   } else  {
     Serial.print("Miss read CHARGING_LIMIT_VOLT, ret val:");
     Serial.println(result, HEX);
   }
-  
-
-  
+ 
   // Capacity
-  //
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(BATTERY_CAPACITY, 1);
   if (result == node.ku8MBSuccess)  {
-    
     BatteryCapactity = node.getResponseBuffer(0);
     Serial.println(String(node.getResponseBuffer(0)));
   } else  {
@@ -757,72 +735,58 @@ void ReadValues() {
     Serial.println(result, HEX);
   }
   
-  
   // Battery SOC
-  //
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(BATTERY_SOC, 1);
-  if (result == node.ku8MBSuccess)  {
-    
+  if (result == node.ku8MBSuccess) {
     batterySOC = node.getResponseBuffer(0);
-    
   } else  {
     Serial.print("Miss read batterySOC, ret val:");
     Serial.println(result, HEX);
   }
 
   // Battery Net Current = Icharge - Iload
-  //
   delay(200);
   node.clearResponseBuffer();
-  result = node.readInputRegisters(  BATTERY_CURRENT_L, 2);
-  if (result == node.ku8MBSuccess)  {
-    
+  result = node.readInputRegisters( BATTERY_CURRENT_L, 2);
+  if (result == node.ku8MBSuccess) {
     batteryCurrent = node.getResponseBuffer(0);
     batteryCurrent |= node.getResponseBuffer(1) << 16;
-    
   } else  {
     Serial.print("Miss read batteryCurrent, ret val:");
     Serial.println(result, HEX);
   }
  
   if (!switch_load) {
-  // State of the Load Switch
-  //
-  delay(200);
-  node.clearResponseBuffer();
-  result = node.readCoils(  LOAD_STATE, 1 );
-  if (result == node.ku8MBSuccess)  {
-    
-    loadState = node.getResponseBuffer(0);
-        
-  } else  {
-    Serial.print("Miss read loadState, ret val:");
-    Serial.println(result, HEX);
-  }
+    // State of the Load Switch
+    delay(200);
+    node.clearResponseBuffer();
+    result = node.readCoils( LOAD_STATE, 1 );
+    if (result == node.ku8MBSuccess)  {
+      loadState = node.getResponseBuffer(0);
+    } else  {
+      Serial.print("Miss read loadState, ret val:");
+      Serial.println(result, HEX);
+    }
   }
 
   // Read Model
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(CCMODEL, 1);
-  if (result == node.ku8MBSuccess)  {
-    
+  if (result == node.ku8MBSuccess) {
     CCModel = node.getResponseBuffer(0);
-    
   } else  {
     Serial.print("Miss read Model, ret val:");
     Serial.println(result, HEX);
   }
     
   // Read Status Flags
-  //
   delay(200);
   node.clearResponseBuffer();
   result = node.readInputRegisters(  0x3200, 2 );
-  if (result == node.ku8MBSuccess)  {
-
+  if (result == node.ku8MBSuccess) {
     uint16_t temp = node.getResponseBuffer(0);
     if (debug) Serial.print( "Batt Flags : "); Serial.println(temp);
     
@@ -835,21 +799,18 @@ void ReadValues() {
     if (debug) Serial.print( "Chrg Flags : "); Serial.println(temp, HEX); 
     charger_mode        = ( temp & 0b0000000000001100 ) >> 2 ;
     if (debug) Serial.print( "charger_mode  : "); Serial.println( charger_mode );
-    
   } else  {
     Serial.print("Miss read ChargeState, ret val:");
     Serial.println(result, HEX);
   }
 }
 
-void preTransmission()
-{
+void preTransmission() {
   digitalWrite(MAX485_RE, 1);
   digitalWrite(MAX485_DE, 1);
 }
 
-void postTransmission()
-{
+void postTransmission() {
   digitalWrite(MAX485_RE, 0);
   digitalWrite(MAX485_DE, 0);
 }
@@ -950,47 +911,45 @@ void loop(void) {
   ESPUI.updateControlValue(Co2Reduction , String(stats.s.c02Reduction/100.f)+"t");
 
   //Check how long has elapsed
-  if(millis() >= time_now + period){
-  time_now += period;      
+  if(millis() >= time_now + period) {
+    time_now += period;      
 
-  if (myConfig.MQTT_Enable == 1) {
-    // establish/keep mqtt connection
-    //
-    if (!mqtt_client.connected())
-    { 
-      mqtt_client.setServer(myConfig.mqtt_server, myConfig.mqtt_port);
-      mqtt_client.setCallback(mqtt_callback);  
-      mqtt_reconnect(); 
-    }
-  
-    mqtt_publish();
-    mqtt_client.loop();
-  }
-
-  // establish/keep influxdb connection
-  if(myConfig.influxdb_enabled == 1) {
-    Influxdb_postData();
-  }
-  
-  // establish/keep influxcloud connection
-  if(myConfig.influxcloud_enabled == 1) {
-    influxCloudPostData();
-  }
-
-// Do the Switching of the Load here
-  if( switch_load == 1 ){
-    switch_load = 0;  
-    Serial.print("Switching Load ");
-    Serial.println( (loadState?"On":"Off") );
-
-    delay(200);
-    result = node.writeSingleCoil(0x0002, loadState);
-    if (result != node.ku8MBSuccess)  {
-      Serial.print("Miss write loadState, ret val:");
-      Serial.println(result, HEX);
-    } 
+    if (myConfig.MQTT_Enable == 1) {
+      // establish/keep mqtt connection
+      //
+      if (!mqtt_client.connected()) { 
+        mqtt_client.setServer(myConfig.mqtt_server, myConfig.mqtt_port);
+        mqtt_client.setCallback(mqtt_callback);  
+        mqtt_reconnect(); 
+      }
     
-  }
+      mqtt_publish();
+      mqtt_client.loop();
+    }
+
+    // establish/keep influxdb connection
+    if(myConfig.influxdb_enabled == 1) {
+      Influxdb_postData();
+    }
+    
+    // establish/keep influxcloud connection
+    if(myConfig.influxcloud_enabled == 1) {
+      influxCloudPostData();
+    }
+
+    // Do the Switching of the Load here
+    if( switch_load == 1 ) {
+      switch_load = 0;  
+      Serial.print("Switching Load ");
+      Serial.println( (loadState?"On":"Off") );
+
+      delay(200);
+      result = node.writeSingleCoil(0x0002, loadState);
+      if (result != node.ku8MBSuccess)  {
+        Serial.print("Miss write loadState, ret val:");
+        Serial.println(result, HEX);
+      }
+    }
   }
   
   // power down MAX485_DE

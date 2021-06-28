@@ -1,8 +1,8 @@
+
 void Influxdb_postData() {
   String poststring;
   String poststring1;
   HTTPClient http;
-
 
   //Construct URL for the influxdb
   String url = "http://" + String(myConfig.influxdb_host) + ":" + myConfig.influxdb_httpPort + "/write?db=" + String(myConfig.influxdb_database) + "&u=" + String(myConfig.influxdb_user) + "&p=" + String(myConfig.influxdb_password);
@@ -49,8 +49,7 @@ void Influxdb_postData() {
     
     unsigned long timeout = millis() + 2500;
     // Read all the lines of the reply from server and print them to Serial
-    while (client.connected())
-    {
+    while (client.connected()) {
       yield();
 
       if (millis() > timeout) {
@@ -59,8 +58,7 @@ void Influxdb_postData() {
         return;
       }
 
-      if (client.available())
-      {
+      if (client.available()) {
         String line = client.readStringUntil('\n');
         //Serial.println(line);
       }

@@ -1,3 +1,4 @@
+
 WiFiClient wifi_client;
 PubSubClient mqtt_client(wifi_client);
 
@@ -7,17 +8,16 @@ long oldTime = 0;
 int do_update = 0, switch_load = 0;
 bool loadState;
 
-void mqtt_publish_s( char* topic , char* msg ){
+void mqtt_publish_s( char* topic , char* msg ) {
 
   Serial.print(topic);
   Serial.print(": ");
   Serial.println(msg);
   
   mqtt_client.publish(topic, msg);
-  
 }
 
-void mqtt_publish_f( char* topic , float value  ){
+void mqtt_publish_f( char* topic , float value  ) {
 
   Serial.print(topic);
   Serial.print(": ");
@@ -26,9 +26,9 @@ void mqtt_publish_f( char* topic , float value  ){
   Serial.println(mqtt_msg);
   
   mqtt_client.publish(topic, mqtt_msg);
-  
 }
-void mqtt_publish_i( char* topic , int value  ){
+
+void mqtt_publish_i( char* topic , int value  ) {
 
   Serial.print(topic);
   Serial.print(": ");
@@ -37,7 +37,6 @@ void mqtt_publish_i( char* topic , int value  ){
   Serial.println(mqtt_msg);
   
   mqtt_client.publish(topic, mqtt_msg);
-  
 }
 
 void mqtt_reconnect() {

@@ -174,7 +174,3 @@ uint8_t i, result;
     "Boost",
     "Equlization"
   };
-
-  //
-
-  
